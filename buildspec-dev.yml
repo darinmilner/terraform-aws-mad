@@ -1,0 +1,36 @@
+version: 0.2 
+
+env:
+  variables: 
+    TF_COMMAND: "apply"
+    TF_VERSION: "1.0.7"
+  parameter-store: 
+    AWS_ACCESS_KEY_ID: "/CodeBuild/MY_AWS_ACCESS_KEY"
+    AWS_SECRET_ACCESS_KEY: "/CodeBuild/MY_AWS_SECRET_KEY"
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.8
+    on-failure:
+      - tf_version=$TERRAFORM_VERSION
+      - wget https://releases.hashicorp.com/terraform/"$TERRAFORM_VERSION"/terraform_"$TERRAFORM_VERSION"_linux_amd64.zip
+      - unzip terraform_"$TERRAFORM_VERSION"_linux_amd64.zip
+      - mv terraform /usr/local/bin/
+  pre_build:
+    on-failure: ABORT
+    commands:
+      - echo terraform execution started on `date`
+  build: 
+    on-failure: ABORT
+    commands:
+      - terraform --version
+      - terraform init -input=false --backend-config=dev.conf
+      - terraform validate
+      - terraform plan -lock=false -input=false -var-file=dev.tfvars           
+      - terraform $TF_COMMAND -input=false -var-file=dev.tfvars -auto-approve  
+  post_build:
+    on-failure: CONTINUE   
+    commands:
+      - echo terraform execution completed on `date`      
+

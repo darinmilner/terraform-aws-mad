@@ -2,6 +2,10 @@ provider "aws" {
   region = "us-east-1"
 }
 
+# renote storage
+backend "s3"{}
+
+
 locals {
   common-tags = {
     Env = "Test"
