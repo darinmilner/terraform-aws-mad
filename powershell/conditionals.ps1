@@ -6,7 +6,7 @@ if(Test-Path -Path $filepath){
     $Data = Write-Output "File exists"
     if ($Data.Count -lt 10){
         Write-Output "Less than 10 words"
-    } else if ($Data.count -lt 20) {
+    } elif ($Data.count -lt 20) {
         Write-Output "Less than 20 words"
     } else {
         Write-Output "20 or more words"

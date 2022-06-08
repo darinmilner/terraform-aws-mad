@@ -1,0 +1,40 @@
+Find all logs for a request ID 
+fields @timestamp, @message
+| filter @message like /REQUEST_ID_GOES_HERE/
+
+Find 50 most recent errors 
+fields Timestamp, LogLevel, Message
+| filter LogLevel == "ERR"
+| sort @timestamp desc
+| limit 50
+
+Find the most expensive Lambda invocations
+filter @type = "REPORT"
+| fields @requestId, @billedDuration
+| sort by @billedDuration desc
+
+View Latency stats for 5 minutes interval
+filter @type = "REPORT"
+| stats avg(@duration), max(@duration), min(@duration) by bin(5m)
+
+Determine the amount of overprovisioned memory for a lambda
+filter @type = "REPORT"
+| stats max(@memorySize / 1024 / 1024) as provisonedMemoryMB,
+  min(@maxMemoryUsed / 1024 / 1024) as smallestMemoryRequestMB,
+  avg(@maxMemoryUsed / 1024 / 1024) as avgMemoryUsedMB,
+  max(@maxMemoryUsed / 1024 / 1024) as maxMemoryUsedMB,
+  provisonedMemoryMB - maxMemoryUsedMB as overProvisionedMB
+
+Show average duration, max duration, min duration, P99 percentile duration and request count
+filter @type = "REPORT"
+| stats avg(@duration), max(@duration), min(@duration), pct(@duration, 99), count(@duration) by bin(5m)
+
+Exclude informational logs to highlight only Lambda errors
+fields @timestamp, @message
+| sort @timestamp desc
+| filter @message not like 'EXTENSION'
+| filter @message not like 'Lambda Insights'
+| filter @message not like 'INFO'
+| filter @message not like 'REPORT'
+| filter @message not like 'END'
+| filter @message not like 'START'

@@ -34,10 +34,19 @@ source "amazon-ebs" "amazon-linux" {
 }
 
 build {
+  name = "amazon linux"
   sources = ["source.amazon-ebs.amazon-linux"]
 
   provisioner "file" {
     destination = "/tmp"
     source      = "/files/"
+  }
+
+  provisioner "shell" {
+    inline = [
+      "echo installing updates",
+      "sudo apt-get update",
+      "sudo apt-get install -y nginx"
+    ]
   }
 }

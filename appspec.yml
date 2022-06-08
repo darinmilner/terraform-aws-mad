@@ -3,9 +3,22 @@
 version: 0.0
 os: windows
 files:
-  - source: \index.html
-    destination: c:\inetpub\wwwroot
+  - source: \config.txt
+    destination: c:\webapps\config
+  - source: source
+    destination: \webapps\myApp
 hooks:
   BeforeInstall:
-    - location: \before-install.bat
-      timeout: 900
+    - location: c:\Scripts\UnzipResourceBundle
+    - location: c:\Scripts\UnzipDataBundle
+      timout: 90 
+  AfterInstall:
+    - location: c:\Scripts\RunResourceTests
+      timeout: 180
+  ApplicationStart:
+    - location: c:\Scripts\RunFunctionalTests
+      timeout: 3600
+  ValidateService:
+    - location: c:\Scripts\MonitorService
+      timeout: 3600
+      runas: codedeployuser

@@ -2,13 +2,14 @@ provider "aws" {
   region = "us-east-1"
 }
 
-# renote storage
-backend "s3"{}
+# # renote storage
+# backend "s3"{}
 
 
 locals {
   common-tags = {
-    Env = "Test"
+    Env    = "Test"
+    Server = "WindowsServer"
   }
 }
 
@@ -16,6 +17,8 @@ resource "aws_vpc" "main-vpc" {
   cidr_block           = var.vpc-cidr
   enable_dns_hostnames = true
   enable_dns_support   = true
+
+  tags = local.common-tags
 }
 
 resource "aws_internet_gateway" "main" {
@@ -28,15 +31,16 @@ data "aws_availability_zones" "available" {
 
 # Public Subnets
 resource "aws_subnet" "public-subnet" {
-  cidr_block              = var.subnet-cidr
+  count                   = 2
+  cidr_block              = var.subnet-cidrs[count.index]
   map_public_ip_on_launch = true
   vpc_id                  = aws_vpc.main-vpc.id
-  availability_zone       = data.aws_availability_zones.available.names[0]
+  availability_zone       = data.aws_availability_zones.available.names[count.index]
 
   tags = merge(
     local.common-tags,
     tomap({
-      "Name" = "${var.prefix}-public-subnet"
+      "Name" = "${var.prefix}-public-subnet-${count.index + 1}"
     })
   )
 }
@@ -60,6 +64,7 @@ resource "aws_route" "public-route" {
 
 # Public Route Table Association
 resource "aws_route_table_association" "public-rt-assoc" {
-  subnet_id      = aws_subnet.public-subnet.id
+  count          = 2
+  subnet_id      = aws_subnet.public-subnet[count.index].id
   route_table_id = aws_route_table.public-rt.id
 }
