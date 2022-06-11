@@ -55,3 +55,28 @@ data "aws_iam_policy_document" "sns-topic-policy" {
 resource "aws_sns_topic" "asg-sns-topic" {
   name = "${var.prefix}-asg-sns-topic-${random_string.rand.result}"
 }
+
+resource "aws_sqs_queue_policy" "test" {
+  queue_url = aws_sqs_queue.notification-queue.id
+
+  policy = <<POLICY
+{
+  "Version": "2012-10-17",
+  "Id": "sqspolicy",
+  "Statement": [
+    {
+      "Sid": "First",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "sqs:SendMessage",
+      "Resource": "${aws_sqs_queue.notification-queue.arn}",
+      "Condition": {
+        "ArnEquals": {
+          "aws:SourceArn": "${aws_sns_topic.asg-sns-topic.arn}"
+        }
+      }
+    }
+  ]
+}
+POLICY
+}

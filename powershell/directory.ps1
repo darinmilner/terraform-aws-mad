@@ -153,3 +153,43 @@ $computers -contains "server1"
 "server1" -in $computers 
 "server1" -notin $computers 
 "SERVER1" -cin $computers 
+
+$list = Get-Content .\computers.txt 
+
+Get-Content log.txt -Tail -ReadCount 5 -Wait 
+Import-CSV .\computers.csv 
+Import-Clixml .\marketing.xml 
+
+Invoke-Command Serv1 {Set-NetFirewallRule -DisplayName "Block Ping" -Enabled False}
+
+#####################
+[System.Collections.ArrayList]$computerList = "www.google.com", "www.yandex.com", "www.udemy.com"
+do {
+    [array]$list = $computerList
+    ForEach($computer in $list) {
+        if(Test-Connection -ComputerName $computer -Count 1 -Quiet) {
+            Write-Host "$computer contacted"
+            $computerList.Remove($computer)
+        }
+    }
+    if($computerList.Count -gt 0) { Start-Sleep 5 }
+}Until($computerList.Count -eq 0)
+Write-Host "All system have been contacted" -ForegroundColor DarkCyan -Background Yellow 
+#####################
+
+$PSDefaultParameterValues = @{"Get-WMIObject:Class"="Win32_OperatingSystem"}
+Get-WmiObject -ComputerName Server1 
+
+$params = @{
+    DisplayName = "Allow Ping"
+    Profile = "Domain"
+    Protocol = "ICMPv4"
+    Direction = "Inbound"
+    Action = "Allow"
+}
+New-NetFirewallRule @params 
+$computers = @{
+    Serv1 = @("172.16.0.40", "10.0.0.40")
+    Serv2 = "172.16.0.10"
+}
+$computers.Serv1[0]
