@@ -34,7 +34,7 @@ resource "aws_launch_template" "launch-tl" {
   #   Environment = "dev",
   #   System      = "test"
   # }))
-  user_data = filebase64("taskdata.ps1")
+  # user_data = filebase64("powershell/get-scripts.ps1")
 
   monitoring {
     enabled = true
