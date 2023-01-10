@@ -44,9 +44,24 @@ resource "aws_launch_template" "launch-tl" {
     device_name = "/dev/sda1"
 
     ebs {
-      volume_size = 60
+      volume_size           = 60
+      delete_on_termination = true
     }
   }
+
+  tag_specifications {
+    resource_type = "instance"
+
+    tags = {
+      Name        = "Test-Powershell-Instance"
+      Bucket-Name = aws_s3_bucket.powershellbucket.bucket
+      Environment = "dev"
+    }
+  }
+
+  depends_on = [
+    aws_s3_bucket.powershellbucket
+  ]
 }
 
 resource "aws_autoscaling_group" "win-server-asg" {
