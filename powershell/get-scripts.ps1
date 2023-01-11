@@ -7,8 +7,10 @@ $awsregion = "us-west-2"
 Import-Module AWSPowerShell
 Set-AWSCredential -AccessKey $accesskey -SecretKey $secret -StoreAs default
 Set-DefaultAWSRegion -Region $awsregion
+
 function Get-BucketName {
-    $bucketNameTag = ((Get-EC2Instance).Instances).Tag |
+    $instanceId =  Get-EC2InstanceMetadata -Category InstanceId
+    $bucketNameTag = ((Get-EC2Instance -InstanceId $instanceId).Instances).Tag |
         Where-Object -FilterScript {$_.Key -eq "Bucket-Name"}
 
     # Gets the bucket name from the tag
@@ -20,7 +22,7 @@ $bucket = Get-BucketName
 Write-Host $bucket
 
 #To get folders inside bucket
-$keyPrefix = "psscripts/"
+$keyPrefix = "psscript/"
 $objects = Get-S3Object -BucketName $bucket -KeyPrefix $keyPrefix
 $localPath = "C:\Test"
 
@@ -36,7 +38,12 @@ foreach ($object in $objects) {
             $localFilePath = Join-Path $localPath $file
             Write-Host $localFilePath
             Copy-S3Object -BucketName $bucket -Key $object.Key  -LocalFile $localFilePath
-       }
+
+            if ($file -like "*win*" -or $file -like "postman") {
+                # Check if file contains the string win or postman and then unzips it
+                Expand-Archive "C:\Path-to-ZipFile.zip" -DestinationPath "Path-to-UnZipFile"  #unzip file
+            }
+        }
 }
 
 function Add-AWSPowerShellModule {

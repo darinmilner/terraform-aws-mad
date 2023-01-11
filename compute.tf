@@ -74,11 +74,11 @@ resource "aws_autoscaling_group" "win-server-asg" {
   max_size            = var.max-size
   vpc_zone_identifier = [aws_subnet.public-subnet[0].id, aws_subnet.public-subnet[1].id]
 
-  tag {
-    key                 = "Terraform-ASG"
-    value               = "${var.prefix}-window-server-autoscaling"
-    propagate_at_launch = true
-  }
+  # tag {
+  #   key                 = "Terraform-ASG"
+  #   value               = "${var.prefix}-window-server-autoscaling"
+  #   propagate_at_launch = true
+  # }
 }
 
 resource "aws_security_group" "web-sg" {
