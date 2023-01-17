@@ -1,14 +1,14 @@
 Function Write-ToLog {
     Param (
-        [String]$logData
+        [String]$logData,
+        [String]$logPath = "C:\PS\log.csv"
     )
-
-    [String]$logPath = "C:\PS\log.csv"
 
     $properties = @{
         Date = (Get-Date)
         Data = $logData
     }
+    Write-Host "Attempting to write to log"
     New-Object -TypeName psobject -Property $properties | Export-Csv -NoTypeInformation -Append -Path $logPath
 }
 
@@ -30,12 +30,12 @@ Function Get-OSReleaseID {
             Try {
                 $wmi = [wmiclass]"\\$computer\root\default:stdRegProv"
                 if(logIt) {
-                    Write-ToLog "$Computer reachable over WMI"
+                    Write-ToLog -logData "$Computer reachable over WMI"
                 }
             }Catch {
                 $ok = $false
                 if (logIt){
-                    Write-ToLog "Failed connecting to $computer over WMI"
+                    Write-ToLog -logData "Failed connecting to $computer over WMI"
                 }
             }
             if($ok){
@@ -49,7 +49,7 @@ Function Get-OSReleaseID {
                 $return = New-Object -TypeName PSObject -Property $properties
                 Write-Output $return
                 if($logIt){
-                    Write-ToLog $return
+                    Write-ToLog -logData $return
                 }
             }Else {
                 $properties = @{

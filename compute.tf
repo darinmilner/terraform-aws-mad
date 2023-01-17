@@ -29,11 +29,11 @@ resource "aws_launch_template" "launch-tl" {
   key_name               = aws_key_pair.auth-key.id
   vpc_security_group_ids = [aws_security_group.web-sg.id]
 
-  # user_data = base64encode(templatefile("userdata.ps1", {
-  #   ServerName  = "server",
-  #   Environment = "dev",
-  #   System      = "test"
-  # }))
+  user_data = base64encode(templatefile("powershell/testing.ps1", {
+    BucketName  = aws_s3_bucket.powershellbucket.bucket,
+    Environment = "dev",
+    System      = "test"
+  }))
   # user_data = filebase64("powershell/get-scripts.ps1")
 
   monitoring {
@@ -90,6 +90,20 @@ resource "aws_security_group" "web-sg" {
     description = "Windows port RDP"
     from_port   = "3389"
     to_port     = "3389"
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    description = "HTTP"
+    from_port   = "80"
+    to_port     = "80"
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    description = "HTTPS"
+    from_port   = "443"
+    to_port     = "443"
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
