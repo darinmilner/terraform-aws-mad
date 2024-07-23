@@ -1,12 +1,3 @@
-data "aws_ami" "windows-ami" {
-  most_recent = true
-  owners      = ["amazon"]
-
-  filter {
-    name   = "name"
-    values = ["Windows_Server-2019-English-Full-Base-*"]
-  }
-}
 
 locals {
   http-port    = 80
@@ -17,22 +8,40 @@ locals {
   all-ips      = "0.0.0.0/0"
 }
 
-resource "aws_key_pair" "auth-key" {
-  key_name   = "authkey"
-  public_key = file("${path.module}/keys/authkey.pub")
-}
+# resource "aws_key_pair" "auth-key" {
+#   key_name   = "authkey"
+#   public_key = file("${path.module}/keys/authkey.pub")
+# }
 
 resource "aws_launch_template" "launch-tl" {
-  name_prefix            = "${var.prefix}-asg-template"
-  instance_type          = var.instance-type
-  image_id               = data.aws_ami.windows-ami.id
-  key_name               = aws_key_pair.auth-key.id
+  name_prefix   = "${var.prefix}-asg-template"
+  instance_type = var.instance-type
+  image_id      = data.aws_ami.windows-ami.id
+  //key_name               = aws_key_pair.auth-key.id
+  key_name               = "EC2-Key"
   vpc_security_group_ids = [aws_security_group.web-sg.id]
+
+  iam_instance_profile {
+    arn = aws_iam_instance_profile.ec2-profile.arn
+  }
+
+  metadata_options {
+    http_endpoint               = "enabled"  //default
+    http_tokens                 = "optional" // default
+    http_put_response_hop_limit = 5
+    instance_metadata_tags      = "enabled"
+  }
+
+  network_interfaces {
+    associate_public_ip_address = true
+    delete_on_termination = true 
+  }
 
   user_data = base64encode(templatefile("powershell/testing.ps1", {
     BucketName  = aws_s3_bucket.powershellbucket.bucket,
     Environment = "dev",
     System      = "test"
+    Region      = var.region
   }))
   # user_data = filebase64("powershell/get-scripts.ps1")
 
@@ -64,22 +73,37 @@ resource "aws_launch_template" "launch-tl" {
   ]
 }
 
-resource "aws_autoscaling_group" "win-server-asg" {
+resource "aws_instance" "ec2-instance" {
+  instance_type = "t2.micro"
   launch_template {
-    id      = aws_launch_template.launch-tl.id
+    id = aws_launch_template.launch-tl.id 
     version = "$Latest"
   }
-  desired_capacity    = var.min-size
-  min_size            = var.min-size
-  max_size            = var.max-size
-  vpc_zone_identifier = [aws_subnet.public-subnet[0].id, aws_subnet.public-subnet[1].id]
-
-  # tag {
-  #   key                 = "Terraform-ASG"
-  #   value               = "${var.prefix}-window-server-autoscaling"
-  #   propagate_at_launch = true
-  # }
 }
+
+# resource "aws_autoscaling_group" "win-server-asg" {
+#   launch_template {
+#     id      = aws_launch_template.launch-tl.id
+#     version = "$Latest"
+#   }
+#   desired_capacity    = var.min-size
+#   min_size            = var.min-size
+#   max_size            = var.max-size
+#   health_check_type = "EC2"
+#   availability_zones = [ "${var.region}a" ]
+#   //vpc_zone_identifier = [aws_subnet.public-subnet[0].id, aws_subnet.public-subnet[1].id]
+
+#   tag {
+#     key                 = "Terraform-ASG"
+#     value               = "${var.prefix}Server"
+#     propagate_at_launch = true
+#   }
+#   tag {
+#     key                 = "OperatingSystem"
+#     value               = "WindowsOS"
+#     propagate_at_launch = true
+#   }
+# }
 
 resource "aws_security_group" "web-sg" {
   name        = "allow_web_access"
@@ -115,117 +139,6 @@ resource "aws_security_group" "web-sg" {
   }
   tags = {
     "Name" = "ec2-sg"
-  }
-}
-
-resource "aws_lb" "loadbalancer" {
-  name               = "${var.prefix}-alb"
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb-sg.id]
-  subnets            = [aws_subnet.public-subnet[0].id, aws_subnet.public-subnet[1].id]
-
-  # access_logs {
-  #   bucket  = var.log-bucket-name
-  #   prefix  = var.prefix
-  #   enabled = true
-  # }
-
-  tags = local.common-tags
-}
-
-resource "aws_lb_listener" "http" {
-  load_balancer_arn = aws_lb.loadbalancer.arn
-  port              = local.http-port
-  protocol          = "HTTP"
-
-  default_action {
-    type = "fixed-response"
-    fixed_response {
-      content_type = "text/plain"
-      message_body = "404 page not found"
-      status_code  = 404
-    }
-  }
-}
-
-resource "aws_security_group" "alb-sg" {
-  name   = "${var.prefix}-alb-security"
-  vpc_id = aws_vpc.main-vpc.id
-
-  ingress {
-    from_port   = local.http-port
-    to_port     = local.http-port
-    protocol    = local.tcp-protocol
-    cidr_blocks = [local.all-ips]
-  }
-
-  ingress {
-    from_port   = local.https-port
-    to_port     = local.https-port
-    protocol    = local.tcp-protocol
-    cidr_blocks = [local.all-ips]
-  }
-
-  egress {
-    from_port   = local.any-port
-    to_port     = local.any-port
-    protocol    = local.any-protocol
-    cidr_blocks = [local.all-ips]
-  }
-}
-
-resource "aws_lb_target_group" "lb-tg" {
-  name     = "${var.prefix}-alb-target-group"
-  port     = var.server-port
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.main-vpc.id
-
-  health_check {
-    path                = "/*"
-    protocol            = "HTTP"
-    matcher             = "200"
-    interval            = var.interval
-    timeout             = 3
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-  }
-}
-
-resource "aws_lb_target_group" "lb-tg-2" {
-  name     = "${var.prefix}-alb-target-group2"
-  port     = 8001
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.main-vpc.id
-
-  health_check {
-    path                = "/*"
-    protocol            = "HTTP"
-    matcher             = "200"
-    interval            = var.interval
-    timeout             = 3
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-  }
-}
-resource "aws_lb_listener_rule" "lb-listener" {
-  listener_arn = aws_lb_listener.http.arn
-  priority     = 100
-
-  condition {
-    path_pattern {
-      values = ["*"]
-    }
-  }
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.lb-tg.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["*"]
-    }
   }
 }
 

@@ -31,3 +31,6 @@ variable "server-port" {
   default = 8000
 }
 
+variable "region" {
+  default = "us-east-1"
+}

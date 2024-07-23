@@ -1,10 +1,9 @@
 provider "aws" {
-  region = "us-east-1"
+  region = var.region
 }
 
 # # renote storage
 # backend "s3"{}
-
 
 locals {
   common-tags = {
@@ -23,10 +22,6 @@ resource "aws_vpc" "main-vpc" {
 
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main-vpc.id
-}
-
-data "aws_availability_zones" "available" {
-  state = "available"
 }
 
 # Public Subnets
@@ -68,3 +63,12 @@ resource "aws_route_table_association" "public-rt-assoc" {
   subnet_id      = aws_subnet.public-subnet[count.index].id
   route_table_id = aws_route_table.public-rt.id
 }
+
+# #VPC Endpoint
+# resource "aws_vpc_endpoint" "ec2" {
+#   vpc_id            = aws_vpc.main-vpc.id
+#   service_name      = "com.amazonaws.${var.region}.ec2"
+#   vpc_endpoint_type = "Interface"
+ 
+#   subnet_ids =  aws_subnet.public-subnet[*].id 
+# }

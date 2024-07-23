@@ -1,3 +1,72 @@
+resource "aws_iam_policy" "ec2-policy" {
+  name        = "server-policy"
+  path        = "/"
+  description = "Policy to provide EC2 permissions"
+  policy      = <<POLICY
+{
+  "Version": "2012-10-17",
+  "Id": "ec2policy",
+  "Statement": [
+    {
+      "Sid": "First",
+      "Effect": "Allow",
+      "Action": [
+        "autoscaling:Describe*",
+        "ssm:DescribeDocument",
+        "ssmmessages:*",
+        "ssm:PutConfigureaPackageResult",
+        "ssm:GetParameter",
+        "ssm:UpdateAssociationStatus",
+        "ssm:GetMannifest",
+        "ssm:GetDocument",
+        "ec2messages:*",
+        "ssm:PutComplianceItems",
+        "ssm:DescribeAssociation",
+        "s3:*",
+        "ssm:GetDeployablePatchSnapshotForInstance",
+        "ssm:PutInventory",
+        "ssm:ListAssociations",
+        "ssm:UpdateInstanceAssociationStatus",
+        "ec2:*",
+        "kms:GenerateDataKey",
+        "kms:Decrypt",
+        "logs:*"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+POLICY
+}
+
+resource "aws_iam_role" "ec2-role" {
+  name = "ec2-profile-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Sid    = ""
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      },
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ec2-policy-attachment" {
+  role       = aws_iam_role.ec2-role.name 
+  policy_arn = aws_iam_policy.ec2-policy.arn
+}
+
+resource "aws_iam_instance_profile" "ec2-profile" {
+  name = "ec2-instance-profile"
+  role = aws_iam_role.ec2-role.name
+}
+
 # resource "aws_sns_topic_policy" "topic-policy" {
 #   arn    = aws_sns_topic.asg-sns-topic.arn
 #   policy = data.aws_iam_policy_document.sns-topic-policy.json

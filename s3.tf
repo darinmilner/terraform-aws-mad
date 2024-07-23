@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "powershellbucket" {
-  bucket = "test-powershell-bucket"
+  bucket = "test-powershell-bucket-${var.region}"
 }
 
 resource "aws_s3_object" "scripts-folder" {
