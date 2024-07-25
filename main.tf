@@ -5,12 +5,6 @@ provider "aws" {
 # # renote storage
 # backend "s3"{}
 
-locals {
-  common-tags = {
-    Env    = "Test"
-    Server = "WindowsServer"
-  }
-}
 
 resource "aws_vpc" "main-vpc" {
   cidr_block           = var.vpc-cidr
@@ -26,16 +20,15 @@ resource "aws_internet_gateway" "main" {
 
 # Public Subnets
 resource "aws_subnet" "public-subnet" {
-  count                   = 2
-  cidr_block              = var.subnet-cidrs[count.index]
+  cidr_block              = var.subnet-cidr
   map_public_ip_on_launch = true
   vpc_id                  = aws_vpc.main-vpc.id
-  availability_zone       = data.aws_availability_zones.available.names[count.index]
+  availability_zone       = "${var.region}a"
 
   tags = merge(
     local.common-tags,
     tomap({
-      "Name" = "${var.prefix}-public-subnet-${count.index + 1}"
+      "Name" = "${var.prefix}-public-subnet"
     })
   )
 }
@@ -59,16 +52,26 @@ resource "aws_route" "public-route" {
 
 # Public Route Table Association
 resource "aws_route_table_association" "public-rt-assoc" {
-  count          = 2
-  subnet_id      = aws_subnet.public-subnet[count.index].id
+  subnet_id      = aws_subnet.public-subnet.id
   route_table_id = aws_route_table.public-rt.id
 }
 
-# #VPC Endpoint
-# resource "aws_vpc_endpoint" "ec2" {
-#   vpc_id            = aws_vpc.main-vpc.id
-#   service_name      = "com.amazonaws.${var.region}.ec2"
-#   vpc_endpoint_type = "Interface"
- 
-#   subnet_ids =  aws_subnet.public-subnet[*].id 
-# }
+# EIP for Nat Gateway
+resource "aws_eip" "nat-eip" {
+  domain = "vpc"
+
+  depends_on = [ aws_internet_gateway.main ]
+}
+
+resource "aws_nat_gateway" "nat-gateway" {
+  allocation_id = aws_eip.nat-eip.id 
+  subnet_id = aws_subnet.public-subnet.id 
+  connectivity_type = "public"
+
+  tags = merge(
+    {
+      Name = "${var.prefix}-nat-gateway"
+    },
+    local.common-tags
+  )
+}

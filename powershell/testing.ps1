@@ -2,7 +2,7 @@
 Function Write-ToLog {
     Param (
         [String]$logData,
-        [String]$logPath = "C:UserdataLog.csv"
+        [String]$logPath = "C:\UserdataLog.csv"
     )
 
     $properties = @{
@@ -18,6 +18,19 @@ Write-ToLog -logData "Environemnt from userdata $Environment"
 
 Import-Module AWSPowerShell.NetCore
 $instanceId = Invoke-RestMethod -UseBasicParsing -Uri "169.254.169.254/latest/meta-data/instance-id"
+
+#Install SSM Agent
+[System.Net.ServicePointManager]::SecurityProtocol = 'TLS12'
+$progressPreference = 'silentlyContinue'
+Invoke-WebRequest `
+    https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/windows_amd64/AmazonSSMAgentSetup.exe `
+    -OutFile $env:USERPROFILE\Desktop\SSMAgent_latest.exe
+
+Start-Process `
+    -FilePath $env:USERPROFILE\Desktop\SSMAgent_latest.exe `
+    -ArgumentList "/S"
+
+rm -Force $env:USERPROFILE\Desktop\SSMAgent_latest.exe
 
 Write-ToLog-logData "This instance's id is $instanceId"
 

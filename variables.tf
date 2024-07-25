@@ -2,8 +2,12 @@ variable "vpc-cidr" {
   default = "10.0.0.0/16"
 }
 
-variable "subnet-cidrs" {
-  default = ["10.0.1.0/24", "10.0.2.0/24"]
+variable "subnet-cidr" {
+  default = "10.0.1.0/24"
+}
+
+variable "private-subnet-cidr" {
+  default = "10.0.2.0/24"
 }
 
 variable "prefix" {
@@ -33,4 +37,8 @@ variable "server-port" {
 
 variable "region" {
   default = "us-east-1"
+}
+
+variable "environment" {
+  default = "dev"
 }

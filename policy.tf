@@ -22,6 +22,7 @@ resource "aws_iam_policy" "ec2-policy" {
         "ec2messages:*",
         "ssm:PutComplianceItems",
         "ssm:DescribeAssociation",
+        "ssm:ListCommands",
         "s3:*",
         "ssm:GetDeployablePatchSnapshotForInstance",
         "ssm:PutInventory",
@@ -58,13 +59,18 @@ resource "aws_iam_role" "ec2-role" {
 }
 
 resource "aws_iam_role_policy_attachment" "ec2-policy-attachment" {
-  role       = aws_iam_role.ec2-role.name 
+  role       = aws_iam_role.ec2-role.name
   policy_arn = aws_iam_policy.ec2-policy.arn
 }
 
 resource "aws_iam_instance_profile" "ec2-profile" {
   name = "ec2-instance-profile"
   role = aws_iam_role.ec2-role.name
+}
+
+resource "aws_iam_role_policy_attachment" "ssm-managed-policy" {
+  role       = aws_iam_role.ec2-role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
 # resource "aws_sns_topic_policy" "topic-policy" {

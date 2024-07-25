@@ -1,41 +1,79 @@
 
-locals {
-  http-port    = 80
-  https-port   = 443
-  any-port     = 0
-  any-protocol = "-1"
-  tcp-protocol = "tcp"
-  all-ips      = "0.0.0.0/0"
-}
-
 # resource "aws_key_pair" "auth-key" {
 #   key_name   = "authkey"
 #   public_key = file("${path.module}/keys/authkey.pub")
 # }
 
-resource "aws_launch_template" "launch-tl" {
-  name_prefix   = "${var.prefix}-asg-template"
-  instance_type = var.instance-type
-  image_id      = data.aws_ami.windows-ami.id
-  //key_name               = aws_key_pair.auth-key.id
-  key_name               = "EC2-Key"
-  vpc_security_group_ids = [aws_security_group.web-sg.id]
+# resource "aws_launch_template" "launch-tl" {
+#   name_prefix   = "${var.prefix}-asg-template"
+#   instance_type = var.instance-type
+#   image_id      = data.aws_ami.windows-ami.id
+#   //key_name               = aws_key_pair.auth-key.id
+#   key_name               = "EC2-Key"
+#   vpc_security_group_ids = [aws_security_group.web-sg.id]
 
-  iam_instance_profile {
-    arn = aws_iam_instance_profile.ec2-profile.arn
-  }
+#   iam_instance_profile {
+#     arn = aws_iam_instance_profile.ec2-profile.arn
+#   }
 
-  metadata_options {
-    http_endpoint               = "enabled"  //default
-    http_tokens                 = "optional" // default
-    http_put_response_hop_limit = 5
-    instance_metadata_tags      = "enabled"
-  }
+#   metadata_options {
+#     http_endpoint               = "enabled"  //default
+#     http_tokens                 = "optional" // default
+#     http_put_response_hop_limit = 5
+#     instance_metadata_tags      = "enabled"
+#   }
 
-  network_interfaces {
-    associate_public_ip_address = true
-    delete_on_termination = true 
-  }
+#   network_interfaces {
+#     associate_public_ip_address = true
+#     delete_on_termination = true 
+#   }
+
+#   user_data = base64encode(templatefile("powershell/testing.ps1", {
+#     BucketName  = aws_s3_bucket.powershellbucket.bucket,
+#     Environment = "dev",
+#     System      = "test"
+#     Region      = var.region
+#   }))
+#   # user_data = filebase64("powershell/get-scripts.ps1")
+
+#   monitoring {
+#     enabled = true
+#   }
+
+#   block_device_mappings {
+#     device_name = "/dev/sda1"
+
+#     ebs {
+#       volume_size           = 60
+#       delete_on_termination = true
+#     }
+#   }
+
+#   tag_specifications {
+#     resource_type = "instance"
+
+#     tags = {
+#       Name        = "Test-Powershell-Instance"
+#       Bucket-Name = aws_s3_bucket.powershellbucket.bucket
+#       Environment = "dev"
+#     }
+#   }
+
+#   depends_on = [
+#     aws_s3_bucket.powershellbucket
+#   ]
+# }
+
+resource "aws_instance" "ec2-instance" {
+  instance_type = "t2.micro"
+  ami           = data.aws_ami.windows-ami.id
+
+  iam_instance_profile = aws_iam_instance_profile.ec2-profile.name
+  key_name             = "EC2-Key"
+  availability_zone    = "${var.region}a"
+  security_groups      = [aws_security_group.web-sg.id]
+  //subnet_id = aws_subnet.public-subnet.id 
+  subnet_id = aws_subnet.private-subnet.id
 
   user_data = base64encode(templatefile("powershell/testing.ps1", {
     BucketName  = aws_s3_bucket.powershellbucket.bucket,
@@ -43,41 +81,10 @@ resource "aws_launch_template" "launch-tl" {
     System      = "test"
     Region      = var.region
   }))
-  # user_data = filebase64("powershell/get-scripts.ps1")
 
-  monitoring {
-    enabled = true
-  }
-
-  block_device_mappings {
-    device_name = "/dev/sda1"
-
-    ebs {
-      volume_size           = 60
-      delete_on_termination = true
-    }
-  }
-
-  tag_specifications {
-    resource_type = "instance"
-
-    tags = {
-      Name        = "Test-Powershell-Instance"
-      Bucket-Name = aws_s3_bucket.powershellbucket.bucket
-      Environment = "dev"
-    }
-  }
-
-  depends_on = [
-    aws_s3_bucket.powershellbucket
-  ]
-}
-
-resource "aws_instance" "ec2-instance" {
-  instance_type = "t2.micro"
-  launch_template {
-    id = aws_launch_template.launch-tl.id 
-    version = "$Latest"
+  tags = {
+    Name = "${var.prefix}-ec2-demo"
+    OS   = "Windows"
   }
 }
 

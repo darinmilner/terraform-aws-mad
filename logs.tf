@@ -1,50 +1,59 @@
-resource "aws_flow_log" "flow-log" {
-  iam_role_arn    = aws_iam_role.vpc-logs-role.arn 
-  log_destination = aws_cloudwatch_log_group.vpc-logs.arn
-  traffic_type    = "ALL"
-  vpc_id          = aws_vpc.main-vpc.id 
-}
+# resource "aws_flow_log" "flow-log" {
+#   iam_role_arn    = aws_iam_role.vpc_flow_log_cloudwatch.arn
+#   log_destination = aws_cloudwatch_log_group.vpc-logs.arn
+#   traffic_type    = "ALL"
+#   vpc_id          = aws_vpc.main-vpc.id
+# }
 
-resource "aws_cloudwatch_log_group" "vpc-logs" {
-  name = "${var.prefix}-vpc-logs"
-}
+# resource "aws_cloudwatch_log_group" "vpc-logs" {
+#   name            = "/aws/vpc-flow-logs/${var.prefix}-logs"
+#   log_group_class = "STANDARD"
+#   #   retention_in_days = 7
 
-data "aws_iam_policy_document" "logs-assume-role" {
-  statement {
-    effect = "Allow"
+#   tags = {
+#     Name        = "VPC-Logs"
+#     Environment = var.environment
+#   }
+# }
 
-    principals {
-      type        = "Service"
-      identifiers = ["vpc-flow-logs.amazonaws.com"]
-    }
+# resource "aws_iam_role" "vpc_flow_log_cloudwatch" {
+#   name_prefix        = "vpc-flow-log-role-"
+#   assume_role_policy = data.aws_iam_policy_document.flow_log_cloudwatch_assume_role.json
+# }
 
-    actions = ["sts:AssumeRole"]
-  }
-}
+# data "aws_iam_policy_document" "flow_log_cloudwatch_assume_role" {
+#   statement {
+#     principals {
+#       type        = "Service"
+#       identifiers = ["vpc-flow-logs.amazonaws.com"]
+#     }
 
-resource "aws_iam_role" "vpc-logs-role" {
-  name               = "vpc-logs-role"
-  assume_role_policy = data.aws_iam_policy_document.vpc-logs-policy.json
-}
+#     actions = ["sts:AssumeRole"]
+#   }
+# }
 
-data "aws_iam_policy_document" "vpc-logs-policy" {
-  statement {
-    effect = "Allow"
+# resource "aws_iam_role_policy_attachment" "vpc_flow_log_cloudwatch" {
+#   role       = aws_iam_role.vpc_flow_log_cloudwatch.name
+#   policy_arn = aws_iam_policy.vpc_flow_log_cloudwatch.arn
+# }
 
-    actions = [
-      "logs:CreateLogGroup",
-      "logs:CreateLogStream",
-      "logs:PutLogEvents",
-      "logs:DescribeLogGroups",
-      "logs:DescribeLogStreams",
-    ]
+# resource "aws_iam_policy" "vpc_flow_log_cloudwatch" {
+#   name_prefix = "vpc-flow-log-cloudwatch-"
+#   policy      = data.aws_iam_policy_document.vpc_flow_log_cloudwatch.json
+# }
 
-    resources = ["*"]
-  }
-}
+# data "aws_iam_policy_document" "vpc_flow_log_cloudwatch" {
+#   statement {
+#     sid = "AWSVPCFlowLogsPushToCloudWatch"
 
-resource "aws_iam_role_policy" "example" {
-  name   = "vpc-logs-role-policy"
-  role   = aws_iam_role.vpc-logs-role.id 
-  policy = data.aws_iam_policy_document.logs-assume-role.json 
-}
+#     actions = [
+#       "logs:CreateLogGroup",
+#       "logs:CreateLogStream",
+#       "logs:PutLogEvents",
+#       "logs:DescribeLogGroups",
+#       "logs:DescribeLogStreams",
+#     ]
+
+#     resources = ["*"]
+#   }
+# }
