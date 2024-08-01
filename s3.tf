@@ -2,6 +2,13 @@ resource "aws_s3_bucket" "powershellbucket" {
   bucket = "test-powershell-bucket-${var.region}"
 }
 
+resource "aws_s3_bucket_versioning" "upload-bucket-versioning" {
+  bucket = aws_s3_bucket.powershellbucket.bucket
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
 # resource "aws_s3_object" "scripts-folder" {
 #   bucket = aws_s3_bucket.powershellbucket.id
 #   acl    = "public-read"
@@ -19,7 +26,7 @@ resource "aws_s3_bucket_acl" "example" {
   depends_on = [aws_s3_bucket_ownership_controls.s3-ownership]
 
   bucket = aws_s3_bucket.powershellbucket.id
-  acl    = "private"
+  acl    = "public-read"
 }
 
 resource "aws_s3_bucket_policy" "bucket-policy" {

@@ -26,6 +26,10 @@ output "ec2-public-ip" {
   value = aws_instance.ec2-instance.public_ip
 }
 
+output "ec2-private-ip" {
+  value = aws_instance.ec2-instance.private_ip
+}
+
 output "vpc-id" {
   value = aws_vpc.main-vpc.id
 }

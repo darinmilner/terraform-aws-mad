@@ -82,7 +82,6 @@ resource "aws_vpc_endpoint" "s3-endpoint" {
   )
 }
 
-
 resource "aws_vpc_endpoint" "ssmmessages-endpoint" {
   #   private_dns_enabled = true
   service_name      = "com.amazonaws.${var.region}.ssmmessages"
@@ -101,7 +100,6 @@ resource "aws_vpc_endpoint" "ssmmessages-endpoint" {
     local.common-tags
   )
 }
-
 
 resource "aws_vpc_endpoint" "ec2messages-endpoint" {
   #   private_dns_enabled = true
@@ -136,7 +134,6 @@ resource "aws_vpc_endpoint_subnet_association" "ec2messages-endpoint-assoc" {
   subnet_id       = aws_subnet.private-subnet.id
   vpc_endpoint_id = aws_vpc_endpoint.ec2messages-endpoint.id
 }
-
 
 resource "aws_vpc_endpoint_subnet_association" "ssm-endpoint-assoc" {
   subnet_id       = aws_subnet.private-subnet.id

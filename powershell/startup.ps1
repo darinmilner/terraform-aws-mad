@@ -19,6 +19,15 @@ Write-ToLog -logData "Environemnt from userdata $Environment"
 Import-Module AWSPowerShell.NetCore
 $instanceId = Invoke-RestMethod -UseBasicParsing -Uri "169.254.169.254/latest/meta-data/instance-id"
 
+Write-ToLog-logData "This instance's id is $instanceId"
+
+$tags = Get-EC2Tag -Region $region -Filter @{
+    Name = "resource-id"
+    Values = $instanceId
+}
+
+$tags | Export-Csv -Path "C:\EC2Tags.csv" -NoTypeInformation
+
 #Install SSM Agent
 [System.Net.ServicePointManager]::SecurityProtocol = 'TLS12'
 $progressPreference = 'silentlyContinue'
@@ -31,14 +40,5 @@ Start-Process `
     -ArgumentList "/S"
 
 rm -Force $env:USERPROFILE\Desktop\SSMAgent_latest.exe
-
-Write-ToLog-logData "This instance's id is $instanceId"
-
-$tags = Get-EC2Tag -Region $region -Filter @{
-    Name = "resource-id"
-    Values = $instanceId
-}
-
-$tags | Export-Csv -Path "C:\EC2Tags.csv" -NoTypeInformation
 
 </powershell>

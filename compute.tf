@@ -75,7 +75,7 @@ resource "aws_instance" "ec2-instance" {
   //subnet_id = aws_subnet.public-subnet.id 
   subnet_id = aws_subnet.private-subnet.id
 
-  user_data = base64encode(templatefile("powershell/testing.ps1", {
+  user_data = base64encode(templatefile("powershell/startup.ps1", {
     BucketName  = aws_s3_bucket.powershellbucket.bucket,
     Environment = "dev",
     System      = "test"
