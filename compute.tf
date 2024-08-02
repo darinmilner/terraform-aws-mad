@@ -68,11 +68,11 @@ resource "aws_instance" "ec2-instance" {
   instance_type = "t2.micro"
   ami           = data.aws_ami.windows-ami.id
 
-  iam_instance_profile = aws_iam_instance_profile.ec2-profile.name
-  key_name             = "EC2-Key"
-  availability_zone    = "${var.region}a"
-  security_groups      = [aws_security_group.web-sg.id]
-  //subnet_id = aws_subnet.public-subnet.id 
+  iam_instance_profile   = aws_iam_instance_profile.ec2-profile.name
+  key_name               = "EC2-Key"
+  availability_zone      = "${var.region}a"
+  vpc_security_group_ids = [aws_security_group.web-sg.id]
+  # subnet_id            = aws_subnet.public-subnet.id
   subnet_id = aws_subnet.private-subnet.id
 
   user_data = base64encode(templatefile("powershell/startup.ps1", {
@@ -113,37 +113,48 @@ resource "aws_instance" "ec2-instance" {
 # }
 
 resource "aws_security_group" "web-sg" {
-  name        = "allow_web_access"
+  name        = "allow web access"
   description = "allow inbound traffic"
   vpc_id      = aws_vpc.main-vpc.id
 
+  # ingress {
+  #   description = "Windows port RDP"
+  #   from_port   = "3389"
+  #   to_port     = "3389"
+  #   protocol    = "tcp"
+  #   cidr_blocks = ["0.0.0.0/0"]
+  # }
+
+  # ingress {
+  #   description = "HTTP"
+  #   from_port   = "80"
+  #   to_port     = "80"
+  #   protocol    = "tcp"
+  #   cidr_blocks = ["0.0.0.0/0"]
+  # }
+
+  # ingress {
+  #   description = "HTTPS"
+  #   from_port   = "443"
+  #   to_port     = "443"
+  #   protocol    = local.tcp-protocol
+  #   cidr_blocks = ["0.0.0.0/0"]
+  # }
+
   ingress {
-    description = "Windows port RDP"
-    from_port   = "3389"
-    to_port     = "3389"
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [aws_subnet.private-subnet.cidr_block] # private subnet cidr
+    from_port   = "0"
+    protocol    = local.any-protocol
+    to_port     = "0"
   }
-  ingress {
-    description = "HTTP"
-    from_port   = "80"
-    to_port     = "80"
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  ingress {
-    description = "HTTPS"
-    from_port   = "443"
-    to_port     = "443"
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+
   egress {
     cidr_blocks = ["0.0.0.0/0"]
     from_port   = "0"
-    protocol    = "-1"
+    protocol    = local.any-protocol
     to_port     = "0"
   }
+
   tags = {
     "Name" = "ec2-sg"
   }

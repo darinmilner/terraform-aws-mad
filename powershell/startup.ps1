@@ -19,7 +19,7 @@ Write-ToLog -logData "Environemnt from userdata $Environment"
 Import-Module AWSPowerShell.NetCore
 $instanceId = Invoke-RestMethod -UseBasicParsing -Uri "169.254.169.254/latest/meta-data/instance-id"
 
-Write-ToLog-logData "This instance's id is $instanceId"
+Write-ToLog -logData "This instance's id is $instanceId"
 
 $tags = Get-EC2Tag -Region $region -Filter @{
     Name = "resource-id"

@@ -4,17 +4,18 @@ resource "aws_security_group" "endpoint-sg" {
   vpc_id      = aws_vpc.main-vpc.id
 
   ingress {
+    description = "Allow Inbound Traffic from VPC and Subnets"
     from_port   = 0
     to_port     = 65535
-    protocol    = "tcp"
-    cidr_blocks = [var.vpc-cidr, var.private-subnet-cidr, var.subnet-cidr]
+    protocol    = local.tcp-protocol
+    cidr_blocks = [aws_vpc.main-vpc.cidr_block, aws_subnet.private-subnet.cidr_block, aws_subnet.public-subnet.cidr_block]
   }
 
   egress {
     from_port   = 0
-    to_port     = 65535
-    protocol    = local.tcp-protocol
-    cidr_blocks = [var.vpc-cidr, var.private-subnet-cidr, var.subnet-cidr]
+    to_port     = 0
+    protocol    = local.any-protocol
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = merge(
@@ -26,15 +27,15 @@ resource "aws_security_group" "endpoint-sg" {
 }
 
 resource "aws_vpc_endpoint" "ec2-endpoint" {
-  #   private_dns_enabled = true
-  service_name      = "com.amazonaws.${var.region}.ec2"
-  vpc_endpoint_type = "Interface"
-  vpc_id            = aws_vpc.main-vpc.id
+  private_dns_enabled = true
+  service_name        = "com.amazonaws.${var.region}.ec2"
+  vpc_endpoint_type   = "Interface"
+  vpc_id              = aws_vpc.main-vpc.id
 
   security_group_ids = [aws_security_group.endpoint-sg.id]
 
   // Connect the endpoint to the private subnet
-  //subnet_ids = [aws_subnet.private-subnet.id]
+  subnet_ids = [aws_subnet.private-subnet.id]
 
   tags = merge(
     {
@@ -45,15 +46,15 @@ resource "aws_vpc_endpoint" "ec2-endpoint" {
 }
 
 resource "aws_vpc_endpoint" "ssm-endpoint" {
-  #   private_dns_enabled = true
-  service_name      = "com.amazonaws.${var.region}.ssm"
-  vpc_endpoint_type = "Interface"
-  vpc_id            = aws_vpc.main-vpc.id
+  private_dns_enabled = true
+  service_name        = "com.amazonaws.${var.region}.ssm"
+  vpc_endpoint_type   = "Interface"
+  vpc_id              = aws_vpc.main-vpc.id
 
   security_group_ids = [aws_security_group.endpoint-sg.id]
 
   // Connect the endpoint to the private subnet
-  //subnet_ids = [aws_subnet.private-subnet.id]
+  subnet_ids = [aws_subnet.private-subnet.id]
 
   tags = merge(
     {
@@ -64,15 +65,15 @@ resource "aws_vpc_endpoint" "ssm-endpoint" {
 }
 
 resource "aws_vpc_endpoint" "s3-endpoint" {
-  #   private_dns_enabled = true
-  service_name      = "com.amazonaws.${var.region}.s3"
-  vpc_endpoint_type = "Interface"
-  vpc_id            = aws_vpc.main-vpc.id
+  # private_dns_enabled = true
+  service_name        = "com.amazonaws.${var.region}.s3"
+  vpc_endpoint_type   = "Interface"
+  vpc_id              = aws_vpc.main-vpc.id
 
   security_group_ids = [aws_security_group.endpoint-sg.id]
 
   // Connect the endpoint to the private subnet
-  //subnet_ids = [aws_subnet.private-subnet.id]
+  subnet_ids = [aws_subnet.private-subnet.id]
 
   tags = merge(
     {
@@ -83,15 +84,15 @@ resource "aws_vpc_endpoint" "s3-endpoint" {
 }
 
 resource "aws_vpc_endpoint" "ssmmessages-endpoint" {
-  #   private_dns_enabled = true
-  service_name      = "com.amazonaws.${var.region}.ssmmessages"
-  vpc_endpoint_type = "Interface"
-  vpc_id            = aws_vpc.main-vpc.id
+  private_dns_enabled = true
+  service_name        = "com.amazonaws.${var.region}.ssmmessages"
+  vpc_endpoint_type   = "Interface"
+  vpc_id              = aws_vpc.main-vpc.id
 
   security_group_ids = [aws_security_group.endpoint-sg.id]
 
   // Connect the endpoint to the private subnet
-  //subnet_ids = [aws_subnet.private-subnet.id]
+  subnet_ids = [aws_subnet.private-subnet.id]
 
   tags = merge(
     {
@@ -102,15 +103,15 @@ resource "aws_vpc_endpoint" "ssmmessages-endpoint" {
 }
 
 resource "aws_vpc_endpoint" "ec2messages-endpoint" {
-  #   private_dns_enabled = true
-  service_name      = "com.amazonaws.${var.region}.ec2messages"
-  vpc_endpoint_type = "Interface"
-  vpc_id            = aws_vpc.main-vpc.id
+  private_dns_enabled = true
+  service_name        = "com.amazonaws.${var.region}.ec2messages"
+  vpc_endpoint_type   = "Interface"
+  vpc_id              = aws_vpc.main-vpc.id
 
   security_group_ids = [aws_security_group.endpoint-sg.id]
 
   // Connect the endpoint to the private subnet
-  //subnet_ids = [aws_subnet.private-subnet.id]
+  subnet_ids = [aws_subnet.private-subnet.id]
 
   tags = merge(
     {
@@ -119,29 +120,3 @@ resource "aws_vpc_endpoint" "ec2messages-endpoint" {
     local.common-tags
   )
 }
-
-resource "aws_vpc_endpoint_subnet_association" "ec2-endpoint-assoc" {
-  subnet_id       = aws_subnet.private-subnet.id
-  vpc_endpoint_id = aws_vpc_endpoint.ec2-endpoint.id
-}
-
-resource "aws_vpc_endpoint_subnet_association" "s3-endpoint-assoc" {
-  subnet_id       = aws_subnet.private-subnet.id
-  vpc_endpoint_id = aws_vpc_endpoint.s3-endpoint.id
-}
-
-resource "aws_vpc_endpoint_subnet_association" "ec2messages-endpoint-assoc" {
-  subnet_id       = aws_subnet.private-subnet.id
-  vpc_endpoint_id = aws_vpc_endpoint.ec2messages-endpoint.id
-}
-
-resource "aws_vpc_endpoint_subnet_association" "ssm-endpoint-assoc" {
-  subnet_id       = aws_subnet.private-subnet.id
-  vpc_endpoint_id = aws_vpc_endpoint.ssm-endpoint.id
-}
-
-resource "aws_vpc_endpoint_subnet_association" "ssmmessages-endpoint-assoc" {
-  subnet_id       = aws_subnet.private-subnet.id
-  vpc_endpoint_id = aws_vpc_endpoint.ssmmessages-endpoint.id
-}
-

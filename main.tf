@@ -2,10 +2,6 @@ provider "aws" {
   region = var.region
 }
 
-# # renote storage
-# backend "s3"{}
-
-
 resource "aws_vpc" "main-vpc" {
   cidr_block           = var.vpc-cidr
   enable_dns_hostnames = true
@@ -56,25 +52,25 @@ resource "aws_route_table_association" "public-rt-assoc" {
   route_table_id = aws_route_table.public-rt.id
 }
 
-# EIP for Nat Gateway
-resource "aws_eip" "nat-eip" {
-  domain = "vpc"
+# # EIP for Nat Gateway
+# resource "aws_eip" "nat-eip" {
+#   domain = "vpc"
 
-  depends_on = [aws_internet_gateway.main]
-}
+#   depends_on = [aws_internet_gateway.main]
+# }
 
-resource "aws_nat_gateway" "nat-gateway" {
-  allocation_id     = aws_eip.nat-eip.id
-  subnet_id         = aws_subnet.public-subnet.id
-  connectivity_type = "public"
+# resource "aws_nat_gateway" "nat-gateway" {
+#   allocation_id     = aws_eip.nat-eip.id
+#   subnet_id         = aws_subnet.public-subnet.id
+#   connectivity_type = "public"
 
-  tags = merge(
-    {
-      Name = "${var.prefix}-nat-gateway"
-    },
-    local.common-tags
-  )
-}
+#   tags = merge(
+#     {
+#       Name = "${var.prefix}-nat-gateway"
+#     },
+#     local.common-tags
+#   )
+# }
 
 resource "aws_subnet" "private-subnet" {
   availability_zone               = "${var.region}a"

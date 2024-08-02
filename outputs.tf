@@ -6,7 +6,7 @@
 #   value = aws_lb_target_group.lb-tg.name
 # }
 
-output "vpc-cider" {
+output "vpc-cidr" {
   value = aws_vpc.main-vpc.cidr_block
 }
 
@@ -33,3 +33,7 @@ output "ec2-private-ip" {
 output "vpc-id" {
   value = aws_vpc.main-vpc.id
 }
+
+# output "eip-endpoint" {
+#   value = aws_eip.nat-eip.public_ip
+# }
